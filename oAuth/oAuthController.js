@@ -33,15 +33,25 @@ passport.use(new IntuitStrategy({
   function(token, tokenSecret, profile, done) {
     // asynchronous verification, for effect...
     process.nextTick(function () {
-      console.log("profile", profile);
+      console.log("profile in Controller", profile);
+
       var qbo = new QuickBooks(INTUIT_CONSUMER_KEY,
                            INTUIT_CONSUMER_SECRET,
                            token,
                            tokenSecret,
                            profile.realmId,
                            true, // use the Sandbox
-                           true); // turn debugging on
-      //console.log("constructor", qbo.constructor);
+                           true);
+                           // turn debugging on
+      // console.log("CONTROLLER VARIABLES!!!")
+      // console.log("INTUIT_CONSUMER_KEY", INTUIT_CONSUMER_KEY, typeof INTUIT_CONSUMER_KEY);
+      // console.log("INTUIT_CONSUMER_KEY", INTUIT_CONSUMER_SECRET, typeof INTUIT_CONSUMER_SECRET);
+      // console.log("token", token, typeof token);
+      // console.log("tokenSecret", tokenSecret, typeof tokenSecret);
+      // console.log("profile.realmId", profile.realmId, typeof profile.realmId);
+      // console.log("END CONTROLLER VARIABLES!!!")
+
+      // console.log("constructor", qbo.constructor);
       // qbo.findAccounts(function(_, accounts) {
       //   accounts.QueryResponse.Account.forEach(function(account) {
       //     console.log(account.Name)
@@ -49,10 +59,6 @@ passport.use(new IntuitStrategy({
       // })
       profile.qbo = qbo;
 
-      console.log("-----------");
-
-     console.log("profile.qbo", profile.qbo);
-     console.log('-----------');
       // To keep the example simple, the user's Intuit profile is returned to
       // represent the logged-in user.  In a typical application, you would want
       // to associate the Intuit account with a user record in your database,

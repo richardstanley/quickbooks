@@ -40,10 +40,51 @@ module.exports = function(app, express) {
   );
 
   app.get('/account', oAuthController.ensureAuthenticated, function(req, res){
-    console.log("req.user.qbo", req.user.qbo);
-     var qbo = req.user.qbo;
+    var qbo = req.user.qbo;
+    // console.log("qbo", qbo);
+    // console.log("typeof qbo in routes", typeof qbo)
+    // console.log("ROUTES VARIABLES!!!")
+    // console.log("INTUIT_CONSUMER_KEY", qbo.consumerKey, typeof qbo.consumerKey);
+    // console.log("INTUIT_CONSUMER_KEY", qbo.consumerSecret, typeof qbo.consumerSecret);
+    // console.log("token", qbo.token, typeof qbo.token);
+    // console.log("tokenSecret", qbo.tokenSecret, typeof qbo.tokenSecret);
+    // console.log("profile.realmId", qbo.realmId, typeof qbo.realmId);
+    // console.log("END ROUTES VARIABLES!!!")
 
-    var qboFunc = new QuickBooks(qbo.consumer_key,
+    var qboFunc = new QuickBooks(qbo.consumerKey,
+                           qbo.consumerSecret,
+                           qbo.token,
+                           qbo.tokenSecret,
+                           qbo.realmId,
+                           true, // use the Sandbox
+                           true)
+    var myAccounts = [];
+    // console.log("QBO func constructor", qboFunc.constructor)
+     qboFunc.findAccounts(function(_, accounts) {
+
+        accounts.QueryResponse.Account.forEach(function(account) {
+
+          myAccounts.push(account.Name);
+
+        });
+      });
+     console.log("-------");
+     console.log("what is myAcount", myAccounts);
+     console.log("-------");
+    res.render('account', { user: req.user, myAccounts: myAccounts });
+
+  });
+
+  app.get('/profit', oAuthController.ensureAuthenticated,  function(req, res) {
+    var qbo = req.user.qbo;
+
+    var dates = {
+      start_date: '2015-04-01',
+      end_date: '2015-05-01'
+    }
+    var myObject = {};
+    var myReport;
+    var qboFunc = new QuickBooks(qbo.consumerKey,
                            qbo.consumerSecret,
                            qbo.token,
                            qbo.tokenSecret,
@@ -51,97 +92,29 @@ module.exports = function(app, express) {
                            true, // use the Sandbox
                            true)
 
-  console.log("QBO IN controller", qbo)
-     qboFunc.findAccounts(function(_, accounts) {
-        accounts.QueryResponse.Account.forEach(function(account) {
-          console.log(account.Name)
-        })
-      })
-    res.render('account', { user: req.user });
+    //build one date object with key value pairs.
+    qboFunc.reportProfitAndLoss(dates,
+      function(_, report) {
+        console.log(report);
+        myReport = report
+      }
+    );
+    console.log("heresmyReport!!!", myReport)
+    //process report
+    for(var i = 0; i < myReport.Rows.Row.length; i++){
+        myObject[myReport.Rows.Row[i].Summary.ColData[0].value] = myReport.Rows.Row[i].Summary.ColData[1].value;
+    }
+
+    res.render('profit.ejs', {myObject: myObject })
   });
 
   app.get('/logout', function(req, res){
     req.logout();
     res.redirect('/');
   });
-  // app.get('/requestToken', function(req, res) {
-  // var postBody = {
-  //   url: 'https://oauth.intuit.com/oauth/v1/get_request_token',
-  //   oauth: {
-  //     callback:        'http://localhost:' + port + '/callback/',
-  //     consumer_key:    consumerKey,
-  //     consumer_secret: consumerSecret
-  //   }
-  // }
-  // request.post(postBody, function (e, r, data) {
-  //   var requestToken = qs.parse(data);
-  //   req.session.oauth_token = requestToken.oauth_token;
-  //   req.session.oauth_token_secret = requestToken.oauth_token_secret;
-
-  //   console.log(requestToken)
-  //   res.redirect(APP_CENTER_URL + requestToken.oauth_token)
-  //   })
-  // });
-
-  // app.get('/callback', function(req, res) {
-  //   var postBody = {
-  //     url: ACCESS_TOKEN_URL,
-  //     oauth: {
-  //       consumer_key:    consumerKey,
-  //       consumer_secret: consumerSecret,
-  //       token:           req.query.oauth_token,
-  //       token_secret:    req.session.oauth_token_secret,
-  //       verifier:        req.query.oauth_verifier,
-  //       realmId:         req.query.realmId
-  //     }
-  //   }
-
-  //   req.session.realmId = postBody.oauth.realmId;
-
-  //   request.post(postBody, function (e, r, data) {
-  //     var accessToken = qs.parse(data)
-  //     console.log(accessToken)
-  //     console.log(postBody.oauth.realmId)
-
-  //     // save the access token somewhere on behalf of the logged in user
-  //     qbo = new QuickBooks(consumerKey,
-  //                          consumerSecret,
-  //                          accessToken.oauth_token, //req.session.oauth_token
-  //                          accessToken.oauth_token_secret, //req.session.oauth_token_secret
-  //                          postBody.oauth.realmId,
-  //                          true, // use the Sandbox
-  //                          true); // turn debugging on
-  //     //req.session.qbo = qbo;
-
-  //     // test out account access
-  //     // qbo.findAccounts(function(_, accounts) {
-  //     //     console.log(account.Name)
-  //     //   })
-  //     });
-
-  //     res.send('<!DOCTYPE html><html lang="en"><head></head><body><script>window.opener.location.reload(); window.close();</script></body></html>');
-  //   });
 
 
-  var dates = {
-    start_date: '2015-04-01',
-    end_date: '2015-05-01'
-  }
-  var myObject = {};
 
-  app.get('/profit', function(req, res) {
-    var qbo = new QuickBooks(consumerKey, consumerSecret, req.session.oauth_token, req.session.oauth_token_secret, req.session.realmId, true, true)
-    console.log(qbo);
-
-    qbo.reportProfitAndLoss(dates, function(_, report) {
-      console.log(report);
-      myObject = report
-
-
-    })
-
-    res.render('profit.ejs', {locals: {object: myObject }} )
-  });
 
   // for(var i = 0; i < response.Rows.Row.length; i++){
   //             obj[response.Rows.Row[i].Summary.ColData[0].value] = response.Rows.Row[i].Summary.ColData[1].value;
