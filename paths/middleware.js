@@ -2,7 +2,8 @@ var morgan      = require('morgan');
 var session = require('express-session');
 var methodOverride = require('method-override');
 var passport = require('passport');
-// var bodyParser  = require('body-parser');
+var cookieParser = require('cookie-parser');
+var bodyParser  = require('body-parser');
 
 module.exports = function(app, express) {
 
@@ -13,7 +14,10 @@ module.exports = function(app, express) {
   app.use(methodOverride('X-HTTP-Method-Override'));
   app.use(session({secret: 'kari',
                  saveUninitialized: true,
-                 resave: true}));
+                 resave: true,
+                cookie: { maxAge: null }}));
+  app.use(cookieParser());
+  app.use(bodyParser.json())
   app.use(passport.initialize());
   app.use(passport.session());
   // app.use(bodyParser());

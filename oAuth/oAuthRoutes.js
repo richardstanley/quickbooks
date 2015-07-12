@@ -1,19 +1,14 @@
 var oAuthController = require('./oAuthController.js');
 var passport = require('passport');
 var QuickBooks = require('../node_modules/node-quickbooks/index.js');
+var Q = require('q');
+var Promise = require("bluebird");
+
 
 module.exports = function(app, express) {
 
-
   var request = require('request');
-  // var qs = require('querystring');
   var QuickBooks = require('../node_modules/node-quickbooks/index.js')
-
-
-  // var APP_CENTER_BASE = 'https://appcenter.intuit.com';
-  // var REQUEST_TOKEN_URL = 'https://oauth.intuit.com/oauth/v1/get_request_token'
-  // var APP_CENTER_URL = APP_CENTER_BASE + '/Connect/Begin?oauth_token='
-  // var ACCESS_TOKEN_URL = 'https://oauth.intuit.com/oauth/v1/get_access_token'
 
   app.get('/', function(req, res){
 
@@ -27,7 +22,6 @@ module.exports = function(app, express) {
   app.get('/auth/intuit', passport.authenticate('intuit'),
     function(req, res) {
 
-    // res.render('intuit.ejs', {locals: {port:port, appCenter: APP_CENTER_BASE }} )
   } );
 
   app.get('/auth/intuit/callback',
@@ -38,6 +32,7 @@ module.exports = function(app, express) {
         res.redirect('/');
     }
   );
+
 
   app.get('/account', oAuthController.ensureAuthenticated, function(req, res){
     var qbo = req.user.qbo;
@@ -59,30 +54,79 @@ module.exports = function(app, express) {
                            true, // use the Sandbox
                            true)
     var myAccounts = [];
-    // console.log("QBO func constructor", qboFunc.constructor)
-     qboFunc.findAccounts(function(_, accounts) {
+    // var findAccounts = Promise.promisify(qboFunc.findAccounts);
+    // findAccounts().then(function(_, accounts) {
+
+    //     accounts.QueryResponse.Account.forEach(function(account) {
+    //       myAccounts.push(account.Name);
+    //     });
+    //     return myAccounts
+
+
+    //   }).then(function(myAccounts){
+    //     console.log("-------");
+    //     console.log("what is myAcount", myAccounts);
+    //     console.log("-------");
+    //     res.render('account', { user: req.user, myAccounts: myAccounts });
+    //   }).catch(function(e) {
+    //     console.log("ERROR WITH THE PROMISES", e);
+    //   });
+
+    qboFunc.findAccounts(function(_, accounts) {
 
         accounts.QueryResponse.Account.forEach(function(account) {
-
           myAccounts.push(account.Name);
+        })
+        console.log("-------");
+        console.log("what is myAccount", myAccounts);
+        console.log("-------");
+        res.render('account', { user: req.user, myAccounts: myAccounts });
 
-        });
       });
-     console.log("-------");
-     console.log("what is myAcount", myAccounts);
-     console.log("-------");
-    res.render('account', { user: req.user, myAccounts: myAccounts });
+    // var findAccounts = Q.nfbind(  qboFunc.findAccounts(function(_, accounts) {
+    //     console.log("running Q promise function");
+    //     accounts.QueryResponse.Account.forEach(function(account) {
+
+    //       myAccounts.push(account.Name);
+
+    //     })
+    //     return myAccounts;
+    //   })
+    // );
+    // console.log("QBO func constructor", qboFunc.constructor)
+     // qboFunc.findAccounts(function(_, accounts) {
+
+     //    accounts.QueryResponse.Account.forEach(function(account) {
+
+     //      myAccounts.push(account.Name);
+
+     //    });
+
+     //  });
+    // findAccounts().done(function(){
+    //   console.log("-------");
+    //   console.log("what is myAcount", myAccounts);
+    //   console.log("-------");
+    // })
+
+
+    // res.render('account', { user: req.user, myAccounts: myAccounts });
+
 
   });
+  var yeardates = ["2015-01-01", "2015-02-01","2015-03-01",
+  "2015-04-01","2015-05-01","2015-06-01","2015-07-01","2015-08-01", "2015-09-01",
+  "2015-10-01", "2015-11-01", "2015-12-01"];
 
   app.get('/profit', oAuthController.ensureAuthenticated,  function(req, res) {
     var qbo = req.user.qbo;
 
-    var dates = {
-      start_date: '2015-04-01',
-      end_date: '2015-05-01'
-    }
-    var myObject = {};
+    // var dates = {
+    //   start_date: '2015-04-01',
+    //   end_date: '2015-05-01'
+    // }
+    var myObjectArray = [];
+
     var myReport;
     var qboFunc = new QuickBooks(qbo.consumerKey,
                            qbo.consumerSecret,
@@ -92,20 +136,56 @@ module.exports = function(app, express) {
                            true, // use the Sandbox
                            true)
 
-    //build one date object with key value pairs.
-    qboFunc.reportProfitAndLoss(dates,
+    var getmyMonth = function(dates) {
+      qboFunc.reportProfitAndLoss(dates,
+
       function(_, report) {
-        console.log(report);
-        myReport = report
-      }
-    );
-    console.log("heresmyReport!!!", myReport)
-    //process report
-    for(var i = 0; i < myReport.Rows.Row.length; i++){
-        myObject[myReport.Rows.Row[i].Summary.ColData[0].value] = myReport.Rows.Row[i].Summary.ColData[1].value;
+         myReport = report;
+         var myObject = {};
+         for(var i = 0; i < myReport.Rows.Row.length; i++){
+            if(myReport.Rows.Row[i].Summary.ColData[1] !== undefined ){
+              myObject[myReport.Rows.Row[i].Summary.ColData[0].value] = myReport.Rows.Row[i].Summary.ColData[1].value;
+              console.log( myObject[myReport.Rows.Row[i].Summary.ColData[0].value], myReport.Rows.Row[i].Summary.ColData[1].value)
+            } else {
+              myObject[myReport.Rows.Row[i].Summary.ColData[0].value] = '0.00';
+              console.log( myObject[myReport.Rows.Row[i].Summary.ColData[0].value], '0.00')
+            }
+          }
+          myObjectArray.push(myObject);
+
+          if(myObjectArray.length === 11) {
+              console.log(myObjectArray);
+              res.render('profit.ejs', {myObjectArray: myObjectArray })
+          }
+
+
+        }
+      )
+    }
+    for(var i = 0; i < yeardates.length-1; i++){
+      var dates = {};
+      dates.start_date =  yeardates[i];
+      dates.end_date =  yeardates[i+1];
+      console.log("request "+i+" start: "+dates.start_date+" end: "+dates.end_date);
+      getmyMonth(dates)
     }
 
-    res.render('profit.ejs', {myObject: myObject })
+
+    //build one date object with key value pairs.
+    // qboFunc.reportProfitAndLoss(dates,
+
+    //   function(_, report) {
+    //     myReport = report;
+
+    //     for(var i = 0; i < myReport.Rows.Row.length; i++){
+    //         myObject[myReport.Rows.Row[i].Summary.ColData[0].value] = myReport.Rows.Row[i].Summary.ColData[1].value;
+    //         console.log( myObject[myReport.Rows.Row[i].Summary.ColData[0].value], myReport.Rows.Row[i].Summary.ColData[1].value)
+    //     }
+    //     res.render('profit.ejs', {myObject: myObject })
+
+    //   }
+    // );
+
   });
 
   app.get('/logout', function(req, res){

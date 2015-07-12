@@ -1,9 +1,10 @@
 var passport = require('passport')
   , util = require('util')
   , IntuitStrategy = require('passport-intuit-oauth').Strategy;
+var keys = require('../config.js');
 
-var INTUIT_CONSUMER_KEY = 'qyprdns8EP57q1ffSi1EqWyK4q47qm'
-var INTUIT_CONSUMER_SECRET = 'izBgcIONbmMOsePPh18AA8glJ04Or0HMkMDK2a4a';
+var INTUIT_CONSUMER_KEY = keys.INTUIT_CONSUMER_KEY
+var INTUIT_CONSUMER_SECRET = keys.INTUIT_CONSUMER_SECRET;
 var QuickBooks = require('../node_modules/node-quickbooks/index.js');
 
 // Passport session setup.
@@ -67,14 +68,6 @@ passport.use(new IntuitStrategy({
     });
   }
 ));
-
-// qbo = new QuickBooks(consumerKey,
-  //                          consumerSecret,
-  //                          accessToken.oauth_token, //req.session.oauth_token
-  //                          accessToken.oauth_token_secret, //req.session.oauth_token_secret
-  //                          postBody.oauth.realmId,
-  //                          true, // use the Sandbox
-  //                          true); // turn debugging on
 
 module.exports = {
   ensureAuthenticated: function(req, res, next) {
