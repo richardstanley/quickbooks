@@ -11,11 +11,17 @@ module.exports = function(app, express) {
   var QuickBooks = require('../node_modules/node-quickbooks/index.js')
 
   app.get('/', function(req, res){
+    console.log("index req.session ", req.session);
+    console.log("index req.user ", req.user);
+    console.log("index req.session.passport.user", req.session.passport.user)
 
     res.render('index', { user: req.user });
   });
 
   app.get('/login', function(req, res){
+    console.log("login req.session ", req.session);
+    console.log("login req.user ", req.user);
+    console.log("login req.session.passport.user", req.session.passport.user)
     res.render('login', { user: req.user });
   });
 
@@ -28,7 +34,6 @@ module.exports = function(app, express) {
     passport.authenticate('intuit', { failureRedirect: '/login' }),
      function(req, res) {
         console.log("Successful LOGIN YAY!");
-        console.log(req.user);
         res.redirect('/');
     }
   );
@@ -36,6 +41,9 @@ module.exports = function(app, express) {
 
   app.get('/account', oAuthController.ensureAuthenticated, function(req, res){
     var qbo = req.user.qbo;
+    console.log("account req.session ", req.session);
+    console.log("account req.user ", req.user);
+    console.log("account req.session.passport.user", req.session.passport.user);
     // console.log("qbo", qbo);
     // console.log("typeof qbo in routes", typeof qbo)
     // console.log("ROUTES VARIABLES!!!")
@@ -121,6 +129,9 @@ module.exports = function(app, express) {
   app.get('/profit', oAuthController.ensureAuthenticated,  function(req, res) {
     var qbo = req.user.qbo;
 
+    console.log("profit req.session ", req.session);
+    console.log("profit req.user ", req.user);
+    console.log("profit req.session.passport.user", req.session.passport.user);
     // var dates = {
     //   start_date: '2015-04-01',
     //   end_date: '2015-05-01'

@@ -15,11 +15,13 @@ var QuickBooks = require('../node_modules/node-quickbooks/index.js');
 //   have a database of user records, the complete Intuit profile is
 //   serialized and deserialized.
 passport.serializeUser(function(user, done) {
+  console.log("Passport Serialize: ", user);
   done(null, user);
 });
 
-passport.deserializeUser(function(obj, done) {
-  done(null, obj);
+passport.deserializeUser(function(user, done) {
+  console.log("Passport Deserialize: ", user);
+  done(null, user);
 });
 
 // Use the IntuitStrategy within Passport.
@@ -73,9 +75,12 @@ module.exports = {
   ensureAuthenticated: function(req, res, next) {
     // console.log("request", req)
     // console.log("HEEELLLOO", req.user);
-
+    console.log("Checking isAuthenticated");
     // req.qbo =
-    if (req.isAuthenticated()) { return next(); }
+    if (req.isAuthenticated()) { console.log("Passport middleware, isAuthenticated");  return next(); }
+    console.log("req.session ", req.session);
+    console.log("req.user ", req.user);
+    console.log("req.session.passport.user", req.session.passport.user);
     res.redirect('/login')
   }
 }
