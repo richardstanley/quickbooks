@@ -1,5 +1,4 @@
 var passport = require('passport')
-  , util = require('util')
   , IntuitStrategy = require('passport-intuit-oauth').Strategy;
 var keys = require('../config.js');
 

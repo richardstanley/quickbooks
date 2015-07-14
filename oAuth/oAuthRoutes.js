@@ -7,7 +7,6 @@ var Promise = require("bluebird");
 
 module.exports = function(app, express) {
 
-  var request = require('request');
   var QuickBooks = require('../node_modules/node-quickbooks/index.js')
 
   app.get('/', function(req, res){
@@ -44,15 +43,6 @@ module.exports = function(app, express) {
     console.log("account req.session ", req.session);
     console.log("account req.user ", req.user);
     console.log("account req.session.passport.user", req.session.passport.user);
-    // console.log("qbo", qbo);
-    // console.log("typeof qbo in routes", typeof qbo)
-    // console.log("ROUTES VARIABLES!!!")
-    // console.log("INTUIT_CONSUMER_KEY", qbo.consumerKey, typeof qbo.consumerKey);
-    // console.log("INTUIT_CONSUMER_KEY", qbo.consumerSecret, typeof qbo.consumerSecret);
-    // console.log("token", qbo.token, typeof qbo.token);
-    // console.log("tokenSecret", qbo.tokenSecret, typeof qbo.tokenSecret);
-    // console.log("profile.realmId", qbo.realmId, typeof qbo.realmId);
-    // console.log("END ROUTES VARIABLES!!!")
 
     var qboFunc = new QuickBooks(qbo.consumerKey,
                            qbo.consumerSecret,
@@ -62,23 +52,6 @@ module.exports = function(app, express) {
                            true, // use the Sandbox
                            true)
     var myAccounts = [];
-    // var findAccounts = Promise.promisify(qboFunc.findAccounts);
-    // findAccounts().then(function(_, accounts) {
-
-    //     accounts.QueryResponse.Account.forEach(function(account) {
-    //       myAccounts.push(account.Name);
-    //     });
-    //     return myAccounts
-
-
-    //   }).then(function(myAccounts){
-    //     console.log("-------");
-    //     console.log("what is myAcount", myAccounts);
-    //     console.log("-------");
-    //     res.render('account', { user: req.user, myAccounts: myAccounts });
-    //   }).catch(function(e) {
-    //     console.log("ERROR WITH THE PROMISES", e);
-    //   });
 
     qboFunc.findAccounts(function(_, accounts) {
 
@@ -91,34 +64,6 @@ module.exports = function(app, express) {
         res.render('account', { user: req.user, myAccounts: myAccounts });
 
       });
-    // var findAccounts = Q.nfbind(  qboFunc.findAccounts(function(_, accounts) {
-    //     console.log("running Q promise function");
-    //     accounts.QueryResponse.Account.forEach(function(account) {
-
-    //       myAccounts.push(account.Name);
-
-    //     })
-    //     return myAccounts;
-    //   })
-    // );
-    // console.log("QBO func constructor", qboFunc.constructor)
-     // qboFunc.findAccounts(function(_, accounts) {
-
-     //    accounts.QueryResponse.Account.forEach(function(account) {
-
-     //      myAccounts.push(account.Name);
-
-     //    });
-
-     //  });
-    // findAccounts().done(function(){
-    //   console.log("-------");
-    //   console.log("what is myAcount", myAccounts);
-    //   console.log("-------");
-    // })
-
-
-    // res.render('account', { user: req.user, myAccounts: myAccounts });
 
 
   });
@@ -155,9 +100,11 @@ module.exports = function(app, express) {
          var myObject = {};
          for(var i = 0; i < myReport.Rows.Row.length; i++){
             if(myReport.Rows.Row[i].Summary.ColData[1] !== undefined ){
+
               myObject[myReport.Rows.Row[i].Summary.ColData[0].value] = myReport.Rows.Row[i].Summary.ColData[1].value;
               console.log( myObject[myReport.Rows.Row[i].Summary.ColData[0].value], myReport.Rows.Row[i].Summary.ColData[1].value)
             } else {
+
               myObject[myReport.Rows.Row[i].Summary.ColData[0].value] = '0.00';
               console.log( myObject[myReport.Rows.Row[i].Summary.ColData[0].value], '0.00')
             }
