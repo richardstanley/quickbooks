@@ -10,17 +10,11 @@ module.exports = function(app, express) {
   var QuickBooks = require('../node_modules/node-quickbooks/index.js')
 
   app.get('/', function(req, res){
-    console.log("index req.session ", req.session);
-    console.log("index req.user ", req.user);
-    console.log("index req.session.passport.user", req.session.passport.user)
 
     res.render('index', { user: req.user });
   });
 
   app.get('/login', function(req, res){
-    console.log("login req.session ", req.session);
-    console.log("login req.user ", req.user);
-    console.log("login req.session.passport.user", req.session.passport.user)
     res.render('login', { user: req.user });
   });
 
@@ -33,6 +27,7 @@ module.exports = function(app, express) {
     passport.authenticate('intuit', { failureRedirect: '/login' }),
      function(req, res) {
         console.log("Successful LOGIN YAY!");
+        console.log(req.user);
         res.redirect('/');
     }
   );
@@ -40,9 +35,6 @@ module.exports = function(app, express) {
 
   app.get('/account', oAuthController.ensureAuthenticated, function(req, res){
     var qbo = req.user.qbo;
-    console.log("account req.session ", req.session);
-    console.log("account req.user ", req.user);
-    console.log("account req.session.passport.user", req.session.passport.user);
 
     var qboFunc = new QuickBooks(qbo.consumerKey,
                            qbo.consumerSecret,
@@ -74,13 +66,6 @@ module.exports = function(app, express) {
   app.get('/profit', oAuthController.ensureAuthenticated,  function(req, res) {
     var qbo = req.user.qbo;
 
-    console.log("profit req.session ", req.session);
-    console.log("profit req.user ", req.user);
-    console.log("profit req.session.passport.user", req.session.passport.user);
-    // var dates = {
-    //   start_date: '2015-04-01',
-    //   end_date: '2015-05-01'
-    // }
     var myObjectArray = [];
 
     var myReport;
@@ -115,8 +100,6 @@ module.exports = function(app, express) {
               console.log(myObjectArray);
               res.render('profit.ejs', {myObjectArray: myObjectArray })
           }
-
-
         }
       )
     }
@@ -127,22 +110,6 @@ module.exports = function(app, express) {
       console.log("request "+i+" start: "+dates.start_date+" end: "+dates.end_date);
       getmyMonth(dates)
     }
-
-
-    //build one date object with key value pairs.
-    // qboFunc.reportProfitAndLoss(dates,
-
-    //   function(_, report) {
-    //     myReport = report;
-
-    //     for(var i = 0; i < myReport.Rows.Row.length; i++){
-    //         myObject[myReport.Rows.Row[i].Summary.ColData[0].value] = myReport.Rows.Row[i].Summary.ColData[1].value;
-    //         console.log( myObject[myReport.Rows.Row[i].Summary.ColData[0].value], myReport.Rows.Row[i].Summary.ColData[1].value)
-    //     }
-    //     res.render('profit.ejs', {myObject: myObject })
-
-    //   }
-    // );
 
   });
 
