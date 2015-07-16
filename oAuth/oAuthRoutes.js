@@ -118,12 +118,41 @@ module.exports = function(app, express) {
     res.redirect('/');
   });
 
+  app.get('/recievable', oAuthController.ensureAuthenticated, function(req, res) {
+     var qbo = req.user.qbo;
 
+     var myObjectArray = [];
 
+     var myReport;
+     var qboFunc = new QuickBooks(qbo.consumerKey,
+                            qbo.consumerSecret,
+                            qbo.token,
+                            qbo.tokenSecret,
+                            qbo.realmId,
+                            true, // use the Sandbox
+                            true);
 
-  // for(var i = 0; i < response.Rows.Row.length; i++){
-  //             obj[response.Rows.Row[i].Summary.ColData[0].value] = response.Rows.Row[i].Summary.ColData[1].value;
-  //         }
+     qboFunc.reportAgedReceivableDetail({num_periods:3}, function(_, report){
 
+        for(var i = 0; i < report.Rows.Row.length - 1; i++){
+          console.log('-------');
+          console.log(i);
+          console.log(report.Rows.Row[i].Rows.Row.length);
+          for(var j = 0; j < report.Rows.Row[i].Rows.Row.length; j++){
+            var myObject = {};
+            myObject["days_past_due"] = report.Rows.Row[i].Header.ColData[0].value;
+            myObject["client"] = report.Rows.Row[i].Rows.Row[j].ColData[3].value;
+            myObject["client_id"] = report.Rows.Row[i].Rows.Row[j].ColData[3].id;
+            myObject["amount"] = report.Rows.Row[i].Rows.Row[j].ColData[5].value;
+            myObject["open_balance"] = report.Rows.Row[i].Rows.Row[j].ColData[6].value;
+            myObject["invoice_num"] = report.Rows.Row[i].Rows.Row[j].ColData[2].value;
+            myObject["invoice_date"] = report.Rows.Row[i].Rows.Row[j].ColData[0].value;
+            myObject["due_date"] = report.Rows.Row[i].Rows.Row[j].ColData[4].value;
+            myObjectArray.push(myObject);
+          }
+        console.log(myObjectArray);
+        }
+     });
+   });
 
 }
