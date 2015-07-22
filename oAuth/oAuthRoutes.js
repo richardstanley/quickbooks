@@ -1,9 +1,8 @@
 var oAuthController = require('./oAuthController.js');
 var passport = require('passport');
 var QuickBooks = require('../node_modules/node-quickbooks/index.js');
-var Q = require('q');
-var Promise = require("bluebird");
-
+var Firebase = require("firebase");
+var myFirebaseRef = new Firebase("https://bizgramer.firebaseio.com/hr/BizData");
 
 module.exports = function(app, express) {
 
@@ -118,12 +117,11 @@ module.exports = function(app, express) {
     res.redirect('/');
   });
 
-  app.get('/recievable', oAuthController.ensureAuthenticated, function(req, res) {
+  app.get('/receivable', oAuthController.ensureAuthenticated, function(req) {
      var qbo = req.user.qbo;
 
      var myObjectArray = [];
 
-     var myReport;
      var qboFunc = new QuickBooks(qbo.consumerKey,
                             qbo.consumerSecret,
                             qbo.token,
@@ -132,12 +130,9 @@ module.exports = function(app, express) {
                             true, // use the Sandbox
                             true);
 
-     qboFunc.reportAgedReceivableDetail({num_periods:3}, function(_, report){
+     qboFunc.reportAgedPayableDetail({num_periods:3}, function(_, report){
 
         for(var i = 0; i < report.Rows.Row.length - 1; i++){
-          console.log('-------');
-          console.log(i);
-          console.log(report.Rows.Row[i].Rows.Row.length);
           for(var j = 0; j < report.Rows.Row[i].Rows.Row.length; j++){
             var myObject = {};
             myObject["days_past_due"] = report.Rows.Row[i].Header.ColData[0].value;
@@ -150,9 +145,54 @@ module.exports = function(app, express) {
             myObject["due_date"] = report.Rows.Row[i].Rows.Row[j].ColData[4].value;
             myObjectArray.push(myObject);
           }
-        console.log(myObjectArray);
         }
+
+        myFirebaseRef.update(
+          {
+            Receivables: myObjectArray
+          }
+        );
      });
    });
 
+  app.get('/payable', oAuthController.ensureAuthenticated, function(req) {
+     var qbo = req.user.qbo;
+
+     var myObjectArray = [];
+
+     var qboFunc = new QuickBooks(qbo.consumerKey,
+                            qbo.consumerSecret,
+                            qbo.token,
+                            qbo.tokenSecret,
+                            qbo.realmId,
+                            true, // use the Sandbox
+                            true);
+
+     qboFunc.reportAgedPayableDetail({num_periods:3}, function(_, report){
+
+         for(var i = 0; i < report.Rows.Row.length - 1; i++){
+          for(var j = 0; j < report.Rows.Row[i].Rows.Row.length; j++){
+            var myObject = {};
+            myObject["days_past_due"] = report.Rows.Row[i].Header.ColData[0].value;
+            myObject["vendor"] = report.Rows.Row[i].Rows.Row[j].ColData[3].value;
+            myObject["vendor_id"] = report.Rows.Row[i].Rows.Row[j].ColData[3].id;
+            myObject["amount"] = report.Rows.Row[i].Rows.Row[j].ColData[6].value;
+            myObject["open_balance"] = report.Rows.Row[i].Rows.Row[j].ColData[7].value;
+            myObject["bill_num"] = report.Rows.Row[i].Rows.Row[j].ColData[2].value;
+            myObject["billed_date"] = report.Rows.Row[i].Rows.Row[j].ColData[0].value;
+            myObject["due_date"] = report.Rows.Row[i].Rows.Row[j].ColData[4].value;
+            myObject["past_due"] = report.Rows.Row[i].Rows.Row[j].ColData[5].value;
+            myObjectArray.push(myObject);
+            console.log(myObject);
+          }
+
+         }
+
+        myFirebaseRef.update(
+          {
+            Payables: myObjectArray
+          }
+        );
+     });
+   });
 }
