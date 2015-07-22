@@ -195,4 +195,31 @@ module.exports = function(app, express) {
         );
      });
    });
-}
+
+app.get('/customers', oAuthController.ensureAuthenticated, function(req) {
+  var qbo = req.user.qbo;
+
+  var myObjectArray = [];
+
+  var qboFunc = new QuickBooks(qbo.consumerKey,
+                         qbo.consumerSecret,
+                         qbo.token,
+                         qbo.tokenSecret,
+                         qbo.realmId,
+                         true, // use the Sandbox
+                         true);
+
+  qboFunc.findCustomers({}, function(err, data){
+     if(err){console.log(err);}
+     console.log(data);
+     myObjectArray.push(data);
+
+     myFirebaseRef.update(
+       {
+         Customers: myObjectArray
+       }
+     );
+    });
+  });
+};
+
